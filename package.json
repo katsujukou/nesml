@@ -1,0 +1,20 @@
+{
+  "name": "nesml-purs",
+  "version": "1.0.0",
+  "description": "NesML: ML-like functional language that compiles to binary for NES.",
+  "keywords": [
+    "compiler",
+    "functional programming language",
+    "ml",
+    "nes"
+  ],
+  "author": {
+    "name": "Katsujukou Kineya",
+    "email": "katsujukou@gmail.com"
+  },
+  "license": "MIT",
+  "scripts": {
+    "test": "spago -x spago.test.dhall test -m Test.Main",
+    "check": "purs-tidy check src test"
+  }
+}

@@ -1,8 +1,8 @@
 { name = "nesml"
 , dependencies =
-  [ "arrays"
+  [ "aff"
+  , "arrays"
   , "console"
-  , "debug"
   , "effect"
   , "either"
   , "exceptions"
@@ -10,12 +10,11 @@
   , "integers"
   , "lists"
   , "maybe"
-  , "node-fs-aff"
   , "numbers"
   , "ordered-collections"
   , "prelude"
-  , "profunctor-lenses"
   , "record"
+  , "spec"
   , "strings"
   , "stringutils"
   , "transformers"
@@ -24,5 +23,5 @@
   , "unfoldable"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs" ]
+, sources = [ "src/**/*.purs", "test/**/*.purs" ]
 }
