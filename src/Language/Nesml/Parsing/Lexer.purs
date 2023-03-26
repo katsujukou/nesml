@@ -80,7 +80,7 @@ popWhile :: (CodePoint -> Boolean) -> Lexer String
 popWhile pred = go List.Nil
   where
   go cps = do
-    lookAheadCodePoint >>= case _ of
+    peekCodePoint >>= case _ of
       Just cp
         | pred cp -> pop *> go (cp : cps)
       _ -> pure $ Str.fromCodePointArray <<< Array.fromFoldable <<< List.reverse $ cps
@@ -88,19 +88,19 @@ popWhile pred = go List.Nil
 popString :: String -> Lexer (Maybe String)
 popString str = do
   let size = StrP.length str
-  lookAhead size >>= case _ of
+  peek size >>= case _ of
     Just str'
       | str == str' -> do
           Just str <$ (replicateA size pop :: Lexer (List _))
     _ -> pure Nothing
 
-lookAheadCodePoint :: Lexer (Maybe CodePoint)
-lookAheadCodePoint = do
+peekCodePoint :: Lexer (Maybe CodePoint)
+peekCodePoint = do
   { src } <- get
   pure $ _.head <$> Str.uncons src
 
-lookAhead :: Int -> Lexer (Maybe String)
-lookAhead size = do
+peek :: Int -> Lexer (Maybe String)
+peek size = do
   get <#> case _ of
     { src }
       | Str.length src >= size -> Just $ Str.take size src
@@ -170,7 +170,7 @@ token = do
   where
   tokInteger = do
     start <- flip applyDelta (posDelta 0 (-1)) <<< _.pos <$> get
-    lookAheadCodePoint >>= case _ of
+    peekCodePoint >>= case _ of
       Just cp
         | cp `is` 'x' -> do
             rest <- pop *> popWhile (\c -> c `elem` (StrP.toCodePointArray "0123456789abcdefABCDEF"))
@@ -206,7 +206,7 @@ token = do
       isn'tModuleNameLike = Array.any (not <<< isLetter) (StrP.toCodePointArray inp)
     if isn'tModuleNameLike then
       do
-        lookAhead 2 >>= case _ of
+        peek 2 >>= case _ of
           Just "::" -> do
             end <- _.pos <$> get
             throwError $ rangedError { start, end } InvalidNamespaceCharacter
@@ -245,12 +245,12 @@ token = do
 
   tokLeftParens = do
     start <- _.pos <$> get
-    lookAheadCodePoint >>= case _ of
+    peekCodePoint >>= case _ of
       Just cp
         | isOperatorChar cp -> do
             void pop
             tok <- tokOperator [] true cp
-            lookAheadCodePoint >>= case _ of
+            peekCodePoint >>= case _ of
               Just rp
                 | rp `is` ')' -> pure tok
               _ -> do
@@ -271,13 +271,13 @@ token = do
     let input = StrP.singleton ch <> rest
     case input of
       "-" -> do
-        lookAheadCodePoint >>= case _ of
+        peekCodePoint >>= case _ of
           Just cp
             | isDigit cp
             , Array.null qual -> pop *> tokDecimalInteger "-" cp
           _ -> pure $ TokOperator qual parens "-"
       "+" -> do
-        lookAheadCodePoint >>= case _ of
+        peekCodePoint >>= case _ of
           Just cp
             | isDigit cp
             , Array.null qual -> pop *> tokDecimalInteger "+" cp
@@ -306,7 +306,7 @@ skipWhitespacesComments = do
 whitespaces :: Lexer (Maybe String)
 whitespaces = do
   { code, strbuf } <- get
-  lookAheadCodePoint >>= case _ of
+  peekCodePoint >>= case _ of
     Just cp
       | not (inComment code)
       , cp `elem` StrP.toCodePointArray "\t\r\n " -> do
@@ -319,7 +319,7 @@ whitespaces = do
 comment :: Lexer (Maybe String)
 comment = do
   { code, pos } <- get
-  lookAhead 2 >>= case _ of
+  peek 2 >>= case _ of
     Just "{*" -> do
       sendBuf
       sendBuf
@@ -335,7 +335,7 @@ comment = do
           leaveComment >>= case _ of
             Just com -> pure $ Just com
             Nothing -> comment
-    _ -> lookAheadCodePoint >>= case _ of
+    _ -> peekCodePoint >>= case _ of
       Nothing
         | inComment code -> do
             modify_ $ \s -> s { strbuf = "", code = Initial }
