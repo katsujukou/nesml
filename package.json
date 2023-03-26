@@ -14,6 +14,7 @@
   },
   "license": "MIT",
   "scripts": {
+    "build": "spago build",
     "test": "spago -x spago.test.dhall test -m Test.Main",
     "check": "purs-tidy check src test"
   }
